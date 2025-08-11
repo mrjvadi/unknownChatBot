@@ -1,0 +1,34 @@
+version: "3.9"
+
+services:
+  redis:
+    image: redis:7-alpine
+    ports:
+      - "6379:6379"
+
+  telegram-gateway:
+    build: ./services/telegram-gateway
+    environment:
+      - BOT_TOKEN=${BOT_TOKEN}
+      - REDIS_ADDR=redis:6379
+      - STREAM_UPDATES=tg_updates
+      - GROUP_NAME=bot
+    depends_on: [redis]
+
+  message-processor:
+    build: ./services/message-processor
+    environment:
+      - REDIS_ADDR=redis:6379
+      - STREAM_UPDATES=tg_updates
+      - STREAM_OUTBOX=tg_outbox
+      - GROUP_NAME=bot
+    depends_on: [redis]
+
+  responder:
+    build: ./services/responder
+    environment:
+      - BOT_TOKEN=${BOT_TOKEN}
+      - REDIS_ADDR=redis:6379
+      - STREAM_OUTBOX=tg_outbox
+      - GROUP_NAME=bot
+    depends_on: [redis]
