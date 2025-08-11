@@ -1,4 +1,4 @@
-module github.com/you/go-telebot-microservice/services/message-processor
+module github.com/mrjvadi/unknownChatBot/services/message-processor
 
 go 1.24.4
 

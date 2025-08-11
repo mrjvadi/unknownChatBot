@@ -1,4 +1,4 @@
-module github.com/you/go-telebot-microservice/services/telegram-gateway
+module github.com/mrjvadi/unknownChatBot/services/telegram-gateway
 
 go 1.24
 

@@ -7,6 +7,7 @@ import (
 	"strings"
 
 	broker "github.com/mrjvadi/go-broker/broker"
+	contracts "github.com/mrjvadi/pkg/contracts"
 	"github.com/redis/go-redis/v9"
 )
 

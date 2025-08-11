@@ -1,4 +1,4 @@
-module github.com/you/go-telebot-microservice/services/responder
+module github.com/mrjvadi/unknownChatBot/services/responder
 
 go 1.24
 
