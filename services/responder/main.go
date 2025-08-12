@@ -2,10 +2,12 @@ package main
 
 import (
 	"context"
+	"github.com/mrjvadi/unknownChatBot/pkg/contracts"
 	"log"
 	"os"
 
 	broker "github.com/mrjvadi/go-broker/broker"
+	"github.com/redis/go-redis/v9"
 	tele "gopkg.in/telebot.v4"
 )
 
@@ -19,7 +21,7 @@ func main() {
 	streamOut := getenv("STREAM_OUTBOX", "tg_outbox")
 	group := getenv("GROUP_NAME", "bot")
 
-	app := broker.New(rdb, streamOut, group, 16)
+	app := broker.New(rdb, streamOut, group, broker.WithStreamLength(32))
 
 	botToken := mustGetenv("BOT_TOKEN")
 	// نیازی به Start کردن Poller نداریم؛ فقط برای Send استفاده می‌کنیم.
@@ -28,20 +30,18 @@ func main() {
 		log.Fatal(err)
 	}
 
-	app.OnTask("TG_SEND", func(ctx context.Context, msg map[string]any) error {
-		chatID := int64Val(msg["chat_id"])
-		text := stringVal(msg["text"])
-		if chatID == 0 || text == "" {
-			return nil
+	app.OnTask("TG_SEND", func(ctx *broker.Context) error {
+		msg := contracts.TGIncoming{}
+		if err := ctx.Bind(&msg); err != nil {
+			log.Printf("failed to decode message: %v", err)
+			return nil // ignore decoding errors
 		}
-		_, err := bot.Send(tele.ChatID(chatID), text)
+		_, err := bot.Send(tele.ChatID(msg.ChatID), msg.Text)
 		return err
 	})
 
 	log.Println("responder started (consuming & sending)…")
-	if err := app.Run(ctx); err != nil {
-		log.Fatal(err)
-	}
+	app.Run(ctx)
 }
 
 func getenv(k, d string) string {

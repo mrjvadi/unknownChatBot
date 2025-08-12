@@ -7,7 +7,8 @@ services:
       - "6379:6379"
 
   telegram-gateway:
-    build: ./services/telegram-gateway
+    image: unknownchatbot-telegram-gateway
+#    build: ./services/telegram-gateway
     environment:
       - BOT_TOKEN=${BOT_TOKEN}
       - REDIS_ADDR=redis:6379
@@ -16,7 +17,8 @@ services:
     depends_on: [redis]
 
   message-processor:
-    build: ./services/message-processor
+    image: unknownchatbot-message-processor
+#    build: ./services/message-processor
     environment:
       - REDIS_ADDR=redis:6379
       - STREAM_UPDATES=tg_updates
@@ -25,10 +27,42 @@ services:
     depends_on: [redis]
 
   responder:
-    build: ./services/responder
+    image: unknownchatbot-responder
+#    build: ./services/responder
     environment:
       - BOT_TOKEN=${BOT_TOKEN}
       - REDIS_ADDR=redis:6379
       - STREAM_OUTBOX=tg_outbox
       - GROUP_NAME=bot
     depends_on: [redis]
+
+  responder-2:
+      image: unknownchatbot-responder
+      #    build: ./services/responder
+      environment:
+        - BOT_TOKEN=${BOT_TOKEN}
+        - REDIS_ADDR=redis:6379
+        - STREAM_OUTBOX=tg_outbox
+        - GROUP_NAME=bot
+      depends_on: [ redis ]
+
+  responder3:
+    image: unknownchatbot-responder
+    #    build: ./services/responder
+    environment:
+      - BOT_TOKEN=${BOT_TOKEN}
+      - REDIS_ADDR=redis:6379
+      - STREAM_OUTBOX=tg_outbox
+      - GROUP_NAME=bot
+    depends_on: [ redis ]
+
+  responder4:
+    image: unknownchatbot-responder
+    #    build: ./services/responder
+    environment:
+      - BOT_TOKEN=${BOT_TOKEN}
+      - REDIS_ADDR=redis:6379
+      - STREAM_OUTBOX=tg_outbox
+      - GROUP_NAME=bot
+    depends_on: [ redis ]
+

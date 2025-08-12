@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"github.com/mrjvadi/unknownChatBot/pkg/contracts"
 	"github.com/redis/go-redis/v9"
 	"log"
 	"os"
@@ -20,7 +21,7 @@ func main() {
 
 	streamUpdates := getenv("STREAM_UPDATES", "tg_updates")
 	groupName := getenv("GROUP_NAME", "bot")
-	app := broker.New(rdb, streamUpdates, groupName, 0) // فقط ارسال می‌کنیم، مصرف نداریم
+	app := broker.New(rdb, streamUpdates, groupName, broker.WithStreamLength(64)) // فقط ارسال می‌کنیم، مصرف نداریم
 
 	botToken := mustGetenv("BOT_TOKEN")
 	bot, err := tele.NewBot(tele.Settings{
@@ -38,16 +39,12 @@ func main() {
 			return nil
 		}
 
-		payload := map[string]any{
-			"chat_id":   msg.Chat.ID,
-			"user_id":   c.Sender().ID,
-			"text":      c.Text(),
-			"timestamp": time.Now().Unix(),
-		}
-
-		if err := app.Enqueue(ctx, "TG_INCOMING", payload); err != nil {
-			log.Printf("enqueue error: %v", err)
-		}
+		app.Enqueue(ctx, "TG_INCOMING", contracts.TGIncoming{
+			ChatID:    msg.Chat.ID,
+			UserID:    msg.Sender.ID,
+			Text:      msg.Text,
+			Timestamp: msg.Time().Unix(),
+		})
 		// رویداد لحظه‌ای (اختیاری)
 		_ = app.Publish(ctx, "tg_events", map[string]any{
 			"type": "received", "chat_id": msg.Chat.ID,

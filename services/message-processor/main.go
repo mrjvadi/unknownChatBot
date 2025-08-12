@@ -7,7 +7,7 @@ import (
 	"strings"
 
 	broker "github.com/mrjvadi/go-broker/broker"
-	contracts "github.com/mrjvadi/pkg/contracts"
+	"github.com/mrjvadi/unknownChatBot/pkg/contracts"
 	"github.com/redis/go-redis/v9"
 )
 
@@ -26,22 +26,27 @@ func main() {
 
 	app.OnTask("TG_INCOMING", func(ctx *broker.Context) error {
 		msg := contracts.TGIncoming{}
-		text := stringVal(msg["text"])
-		chatID := int64Val(msg["chat_id"])
+		if err := ctx.Bind(&msg); err != nil {
+			log.Printf("failed to decode message: %v", err)
+			return nil // ignore decoding errors
+		}
 
 		reply := "متوجه نشدم. /help رو بزن."
 		switch {
-		case strings.HasPrefix(text, "/start"):
+		case strings.HasPrefix(msg.Text, "/start"):
 			reply = "سلام! 👋 به ربات خوش اومدی."
-		case strings.HasPrefix(text, "/help"):
+		case strings.HasPrefix(msg.Text, "/help"):
 			reply = "دستورات: /start /help"
 		}
 
+		ctxs := context.Background()
+
 		out := broker.New(rdb, streamOut, group, broker.WithMaxJobs(32))
-		out.Enqueue(ctx, "TG_SEND", map[string]any{
-			"chat_id": chatID,
-			"text":    reply,
+		out.Enqueue(ctxs, "TG_SEND", contracts.TGSend{
+			ChatID: msg.ChatID,
+			Text:   reply,
 		})
+		return nil
 	})
 
 	log.Println("message-processor started (consuming)…")
@@ -53,26 +58,4 @@ func getenv(k, d string) string {
 		return v
 	}
 	return d
-}
-
-func stringVal(v any) string {
-	if v == nil {
-		return ""
-	}
-	if s, ok := v.(string); ok {
-		return s
-	}
-	return ""
-}
-func int64Val(v any) int64 {
-	switch t := v.(type) {
-	case int64:
-		return t
-	case int:
-		return int64(t)
-	case float64:
-		return int64(t)
-	default:
-		return 0
-	}
 }
